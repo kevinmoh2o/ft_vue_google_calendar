@@ -1,98 +1,86 @@
 <template>
-
-<div v-if="loggedIn">
   <div>
-    <h2>{{usuario.name}}</h2>
-    <h2>{{usuario.email}}</h2>
-    <button @click="logout">logout</button>
+    <p>Google Calendar API Quickstart</p>
+
+    <button v-if="isAuthorized" @click="handleSignoutClick">Sign Out</button>
+    <button v-else @click="handleAuthClick">Authorize</button>
+
+    <pre>{{ events }}</pre>
   </div>
-</div>
-<div v-else>
-  <GoogleLogin :callback="callback" :scope="yourScopes"/>
-</div>
-
-
 </template>
 
 <script>
-//import SocialVue from './components/SocialVue.vue'
-import { gapi } from 'vue-gapi'
-let tokenClient;
-/* let gapiInited = false;
-let gisInited = false; */
-import {decodeCredential, googleLogout} from 'vue3-google-login';
-
 export default {
-  name: 'App',
-  components: {
-   // SocialVue
-  },
-  data(){
+  data() {
     return {
-      loggedIn:null,
-      yourScopes:"openid email profile https://www.googleapis.com/auth/calendar",
-      usuario:{},
-    }
+      apiKey: process.env.VUE_APP_API_KEY,
+      clientId: process.env.VUE_APP_CLIENT_ID,
+      discoveryDoc: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+      scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+      isAuthorized: false,
+      events: [],
+    };
   },
-  setup() {
-    
-   /*  const gapi = useGapi()
-
-    function login() {
-      gapi.login().then(({ currentUser, gapi, hasGrantedScopes }) => {
-        console.log({ currentUser, gapi, hasGrantedScopes })
-      })
-    }
-    console.log("login",login)
-
-    return { login } */
+  mounted() {
+    this.loadGoogleAPI();
   },
   methods: {
-    callback (response) {
-      var pp = decodeCredential(response.credential);
-      console.log("pp",pp);
-      this.usuario = pp;
-      console.log("this.usuario ",this.usuario );
-      this.handleAuthClick()
-      if( this.usuario){
-        this.loggedIn = true
-      }
+    loadGoogleAPI() {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = this.handleGoogleAPILoaded;
+      document.body.appendChild(script);
     },
-    logout(){
-      googleLogout(),
-      this.loggedIn=false
+    handleGoogleAPILoaded() {
+      window.gapi.load('client:auth2', this.initGoogleClient);
+    },
+    initGoogleClient() {
+      window.gapi.client
+        .init({
+          apiKey: this.apiKey,
+          clientId: this.clientId,
+          discoveryDocs: [this.discoveryDoc],
+          scope: this.scopes,
+        })
+        .then(() => {
+          window.gapi.auth2.getAuthInstance().isSignedIn.listen(this.updateSigninStatus);
+          this.updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
+        });
+    },
+    updateSigninStatus(isSignedIn) {
+      this.isAuthorized = isSignedIn;
+      if (isSignedIn) {
+        this.listUpcomingEvents();
+      }
     },
     handleAuthClick() {
-        tokenClient.callback = async (resp) => {
-          if (resp.error !== undefined) {
-            throw (resp);
+      window.gapi.auth2.getAuthInstance().signIn();
+    },
+    handleSignoutClick() {
+      window.gapi.auth2.getAuthInstance().signOut();
+    },
+    listUpcomingEvents() {
+      window.gapi.client.calendar.events
+        .list({
+          calendarId: 'primary',
+          timeMin: new Date().toISOString(),
+          showDeleted: false,
+          singleEvents: true,
+          maxResults: 10,
+          orderBy: 'startTime',
+        })
+        .then(response => {
+          const events = response.result.items;
+          if (events.length > 0) {
+            this.events = events.map(event => `${event.summary} (${event.start.dateTime || event.start.date})`);
+          } else {
+            this.events = 'No events found.';
           }
-          /* document.getElementById('signout_button').style.visibility = 'visible';
-          document.getElementById('authorize_button').innerText = 'Refresh'; */
-          //await listUpcomingEvents();
-        };
-
-        if (gapi.client.getToken() === null) {
-          // Prompt the user to select a Google Account and ask for consent to share their data
-          // when establishing a new session.
-          tokenClient.requestAccessToken({prompt: 'consent'});
-        } else {
-          // Skip display of account chooser and consent dialog for an existing session.
-          tokenClient.requestAccessToken({prompt: ''});
-        }
-      }
-
+        })
+        .catch(error => {
+          console.error('Error fetching events:', error);
+        });
+    },
   },
-}
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
