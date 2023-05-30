@@ -1,4 +1,4 @@
-
+/* 
 
 import { google } from 'googleapis';
 
@@ -23,4 +23,4 @@ blogger.blogs.get(params, (err, res) => {
     throw err;
   }
   console.log(`The blog url is ${res.data.url}`);
-});
+}); */
