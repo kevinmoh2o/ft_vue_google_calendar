@@ -35,19 +35,19 @@ export default {
       googleAuth: null,
     };
   },
-  created() {
+  async created() {
       console.log("created")
       /* this.gisLoaded();
       this.gapiLoaded() */
       this.googleAuth = new GoogleCalendarAPI();
-      this.googleAuth.gisLoaded();
-      this.googleAuth.gapiLoaded();
+      await this.googleAuth.gisLoaded();
+      await this.googleAuth.gapiLoaded();
     },
   methods: {
     handleAuthClick() {
       this.googleAuth.handleAuthClick();
     },
-    gisLoaded() {
+    /* gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
@@ -72,7 +72,7 @@ export default {
         });
         gapiInited = true;
         this.maybeEnableButtons();
-      },
+      }, */
       /* handleAuthClick() {
                   console.log("handleAuthClick")
         tokenClient.callback = async (resp) => {
@@ -94,14 +94,15 @@ export default {
         }
       }, */
       handleSignoutClick() {
-        const token = gapi.client.getToken();
+        this.googleAuth.handleSignoutClick();
+        /* const token = gapi.client.getToken();
         if (token !== null) {
           google.accounts.oauth2.revoke(token.access_token);
           gapi.client.setToken('');
           document.getElementById('content').innerText = '';
           document.getElementById('authorize_button').innerText = 'Authorize';
           document.getElementById('signout_button').style.visibility = 'hidden';
-        }
+        } */
       },
       async listUpcomingEvents() {
         let response;

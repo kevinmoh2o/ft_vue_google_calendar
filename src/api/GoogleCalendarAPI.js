@@ -1,86 +1,4 @@
 /* eslint-disable no-unused-vars, no-undef */
-/* class GoogleAuth {
-  constructor(clientId, scopes) {
-    this.clientId = clientId;
-    this.scopes = scopes;
-    this.tokenClient = null;
-    this.isAuthorized = false;
-    this.gisInited = 
-  }
-
-  async initTokenClient() {
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: this.clientId,
-      scope: this.scopes,
-      callback: '',
-    });
-    console.log("tokenClient",tokenClient);
-    gisInited = true;
-    this.maybeEnableButtons();
-  }
-
-  async handleTokenResponse(resp) {
-    if (resp.error !== undefined) {
-      throw resp;
-    }
-
-    this.isAuthorized = true;
-    // Realiza las acciones necesarias después de la autorización exitosa
-    // ...
-
-    await this.listUpcomingEvents();
-  }
-
-  async requestAccessToken(prompt = '') {
-    if (gapi.client.getToken() === null) {
-      this.tokenClient.requestAccessToken({ prompt });
-    } else {
-      this.tokenClient.requestAccessToken({ prompt: '' });
-    }
-  }
-
-  async listUpcomingEvents() {
-    let response;
-
-    try {
-      const request = {
-        calendarId: 'primary',
-        timeMin: new Date().toISOString(),
-        showDeleted: false,
-        singleEvents: true,
-        maxResults: 10,
-        orderBy: 'startTime',
-      };
-      response = await gapi.client.calendar.events.list(request);
-      console.log('response GET', response);
-    } catch (err) {
-      document.getElementById('content').innerText = err.message;
-      return;
-    }
-
-    const events = response.result.items;
-    if (!events || events.length === 0) {
-      document.getElementById('content').innerText = 'No events found.';
-      return;
-    }
-
-    const output = events.reduce(
-      (str, event) =>
-        `${str}${event.summary} (${event.start.dateTime || event.start.date})\n`,
-      'Events:\n'
-    );
-    document.getElementById('content').innerText = output;
-  }
-
-  // Otros métodos y funciones necesarios
-  // ...
-}
-
-export default GoogleAuth;
- */
-
-
-/* eslint-disable no-unused-vars, no-undef */
 
 class GoogleCalendarAPI {
   constructor() {
@@ -93,13 +11,14 @@ class GoogleCalendarAPI {
     this.gisInited = false;
   }
 
-  gisLoaded() {
+  async gisLoaded() {
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.CLIENT_ID,
       scope: this.SCOPES,
       callback: '',
     });
     console.log("this.tokenClient",this.tokenClient);
+    console.log("this.tokenClient",google);
     this.gisInited = true;
     this.maybeEnableButtons();
   }
@@ -110,8 +29,8 @@ class GoogleCalendarAPI {
     }
   }
 
-  gapiLoaded() {
-    gapi.load('client', this.initializeGapiClient.bind(this));
+  async gapiLoaded() {
+    gapi.load('client', await this.initializeGapiClient.bind(this));
   }
 
   async initializeGapiClient() {
@@ -142,8 +61,11 @@ class GoogleCalendarAPI {
 
   handleSignoutClick() {
     const token = gapi.client.getToken();
+    console.log("Sing out token: ",token);
     if (token !== null) {
-      google.accounts.oauth2.revoke(token.access_token);
+      var verSalida = google.accounts.oauth2.revoke(token.access_token);
+      console.log("Sing out token: ",verSalida);
+
       gapi.client.setToken('');
       document.getElementById('content').innerText = '';
       document.getElementById('authorize_button').innerText = 'Authorize';
