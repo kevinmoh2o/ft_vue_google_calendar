@@ -1,15 +1,7 @@
 <template>
-  <!-- <div>
-    <p>Google Calendar API Quickstart</p>
-
-    <button v-if="isAuthorized" @click="handleSignoutClick">Sign Out</button>
-    <button v-else @click="handleAuthClick">Authorize</button>
-
-    <pre>{{ events }}</pre>
-  </div> -->
+  
   <p>Google Calendar API Quickstart</p>
 
-    <!--Add buttons to initiate auth sequence and sign out-->
     <button id="authorize_button" :onclick="handleAuthClick">Authorize</button>
     <button id="signout_button" :onclick="handleSignoutClick">Sign Out</button>
     <button id="grabar" :onclick="grabar">grabar</button>
@@ -20,19 +12,15 @@
 
 <script>
 /* eslint-disable no-unused-vars, no-undef */
-  const CLIENT_ID = '934035905155-j0pebpfv7esjsr3o4e317srudfc9ges5.apps.googleusercontent.com';
-  const API_KEY = 'AIzaSyAXl2LlmWdFv7X3-scLBw_-IccJtDaUjI0';
-
-  // Discovery doc URL for APIs used by the quickstart
+  const CLIENT_ID = process.env.VUE_APP_CLIENT_ID;
+  const API_KEY = process.env.VUE_APP_API_KEY;
   const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-
-  // Authorization scopes required by the API; multiple scopes can be
-  // included, separated by spaces.
   const SCOPES = 'https://www.googleapis.com/auth/calendar';
-
   let tokenClient;
   let gapiInited = false;
   let gisInited = false;
+
+  import GoogleCalendarAPI from './api/GoogleCalendarAPI';
 
 
 export default {
@@ -44,24 +32,26 @@ export default {
       scopes: 'https://www.googleapis.com/auth/calendar.readonly',
       isAuthorized: false,
       events: [],
+      googleAuth: null,
     };
   },
   created() {
       console.log("created")
-      this.gisLoaded();
-      this.gapiLoaded()
-      /* loadScript('https://apis.google.com/js/api.js', gapiLoaded);
-      loadScript('https://accounts.google.com/gsi/client', gisLoaded); */
+      /* this.gisLoaded();
+      this.gapiLoaded() */
+      this.googleAuth = new GoogleCalendarAPI();
+      this.googleAuth.gisLoaded();
+      this.googleAuth.gapiLoaded();
     },
-  mounted() {
-    //this.loadGoogleAPI();
-  },
   methods: {
+    handleAuthClick() {
+      this.googleAuth.handleAuthClick();
+    },
     gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: '', // defined later
+          callback: '',
         });
         console.log("tokenClient",tokenClient);
         gisInited = true;
@@ -83,7 +73,7 @@ export default {
         gapiInited = true;
         this.maybeEnableButtons();
       },
-      handleAuthClick() {
+      /* handleAuthClick() {
                   console.log("handleAuthClick")
         tokenClient.callback = async (resp) => {
           console.log("resp",resp)
@@ -98,14 +88,11 @@ export default {
         };
 
         if (gapi.client.getToken() === null) {
-          // Prompt the user to select a Google Account and ask for consent to share their data
-          // when establishing a new session.
           tokenClient.requestAccessToken({prompt: 'consent'});
         } else {
-          // Skip display of account chooser and consent dialog for an existing session.
           tokenClient.requestAccessToken({prompt: ''});
         }
-      },
+      }, */
       handleSignoutClick() {
         const token = gapi.client.getToken();
         if (token !== null) {
@@ -118,6 +105,7 @@ export default {
       },
       async listUpcomingEvents() {
         let response;
+
         try {
           const request = {
             'calendarId': 'primary',
@@ -128,6 +116,7 @@ export default {
             'orderBy': 'startTime',
           };
           response = await gapi.client.calendar.events.list(request);
+          console.log("response GET",response);
         } catch (err) {
           document.getElementById('content').innerText = err.message;
           return;
@@ -138,28 +127,23 @@ export default {
           document.getElementById('content').innerText = 'No events found.';
           return;
         }
-        // Flatten to string to display
         const output = events.reduce(
             (str, event) => `${str}${event.summary} (${event.start.dateTime || event.start.date})\n`,
             'Events:\n');
         document.getElementById('content').innerText = output;
       },
       async grabar(){
-        // Refer to the JavaScript quickstart on how to setup the environment:
-        // https://developers.google.com/calendar/quickstart/js
-        // Change the scope to 'https://www.googleapis.com/auth/calendar' and delete any
-        // stored credentials.
 
         const event = {
           'summary': 'Google I/O 2023',
           'location': '800 Howard St., San Francisco, CA 94103',
           'description': 'A chance to hear more about Google\'s developer products.',
           'start': {
-            'dateTime': '2023-05-28T09:00:00-07:00',
+            'dateTime': '2023-05-31T09:00:00-07:00',
             'timeZone': 'America/Los_Angeles'
           },
           'end': {
-            'dateTime': '2023-05-28T17:00:00-07:00',
+            'dateTime': '2023-05-31T17:00:00-07:00',
             'timeZone': 'America/Los_Angeles'
           },
           'recurrence': [
@@ -185,74 +169,10 @@ export default {
 
         request.execute(function(event) {
           console.log("event",event)
-          //appendPre('Event created: ' + event.htmlLink);
         });
 
 
       }
-
-
-
-
-
-
-
-    /* loadGoogleAPI() {
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = this.handleGoogleAPILoaded;
-      document.body.appendChild(script);
-    },
-    handleGoogleAPILoaded() {
-      window.gapi.load('client:auth2', this.initGoogleClient);
-    },
-    initGoogleClient() {
-      window.gapi.client
-        .init({
-          apiKey: this.apiKey,
-          clientId: this.clientId,
-          discoveryDocs: [this.discoveryDoc],
-          scope: this.scopes,
-        })
-        .then(() => {
-          window.gapi.auth2.getAuthInstance().isSignedIn.listen(this.updateSigninStatus);
-          this.updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
-        });
-    },
-    updateSigninStatus(isSignedIn) {
-      this.isAuthorized = isSignedIn;
-      if (isSignedIn) {
-        this.listUpcomingEvents();
-      }
-    },
-    handleAuthClick() {
-      window.gapi.auth2.getAuthInstance().signIn();
-    },
-    handleSignoutClick() {
-      window.gapi.auth2.getAuthInstance().signOut();
-    },
-    listUpcomingEvents() {
-      window.gapi.client.calendar.events
-        .list({
-          calendarId: 'primary',
-          timeMin: new Date().toISOString(),
-          showDeleted: false,
-          singleEvents: true,
-          maxResults: 10,
-          orderBy: 'startTime',
-        })
-        .then(response => {
-          const events = response.result.items;
-          if (events.length > 0) {
-            this.events = events.map(event => `${event.summary} (${event.start.dateTime || event.start.date})`);
-          } else {
-            this.events = 'No events found.';
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching events:', error);
-        });
-    }, */
   },
 };
 </script>
