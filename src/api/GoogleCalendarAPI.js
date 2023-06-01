@@ -20,17 +20,19 @@ class GoogleCalendarAPI {
     console.log("this.tokenClient",this.tokenClient);
     console.log("this.tokenClient",google);
     this.gisInited = true;
-    this.maybeEnableButtons();
+    //this.maybeEnableButtons();
+    return true;
   }
 
-  maybeEnableButtons() {
+  /* maybeEnableButtons() {
     if (this.gapiInited && this.gisInited) {
       document.getElementById('authorize_button').style.visibility = 'visible';
     }
-  }
+  } */
 
   async gapiLoaded() {
     gapi.load('client', await this.initializeGapiClient.bind(this));
+    return true;
   }
 
   async initializeGapiClient() {
@@ -39,16 +41,16 @@ class GoogleCalendarAPI {
       discoveryDocs: [this.DISCOVERY_DOC],
     });
     this.gapiInited = true;
-    this.maybeEnableButtons();
+    //this.maybeEnableButtons();
   }
 
-  handleAuthClick() {
+  async handleAuthClick() {
     this.tokenClient.callback = async (resp) => {
       if (resp.error !== undefined) {
         throw resp;
       }
-      document.getElementById('signout_button').style.visibility = 'visible';
-      document.getElementById('authorize_button').innerText = 'Refresh';
+      ////document.getElementById('signout_button').style.visibility = 'visible';
+      ////document.getElementById('authorize_button').innerText = 'Refresh';
       await this.listUpcomingEvents();
     };
 
@@ -57,6 +59,7 @@ class GoogleCalendarAPI {
     } else {
       this.tokenClient.requestAccessToken({ prompt: '' });
     }
+    return this.tokenClient;
   }
 
   handleSignoutClick() {
@@ -67,9 +70,9 @@ class GoogleCalendarAPI {
       console.log("Sing out token: ",verSalida);
 
       gapi.client.setToken('');
-      document.getElementById('content').innerText = '';
-      document.getElementById('authorize_button').innerText = 'Authorize';
-      document.getElementById('signout_button').style.visibility = 'hidden';
+      //document.getElementById('content').innerText = '';
+      //document.getElementById('authorize_button').innerText = 'Authorize';
+      //document.getElementById('signout_button').style.visibility = 'hidden';
     }
   }
 
@@ -88,20 +91,20 @@ class GoogleCalendarAPI {
       response = await gapi.client.calendar.events.list(request);
       console.log('response GET', response);
     } catch (err) {
-      document.getElementById('content').innerText = err.message;
+      //document.getElementById('content').innerText = err.message;
       return;
     }
 
     const events = response.result.items;
     if (!events || events.length === 0) {
-      document.getElementById('content').innerText = 'No events found.';
+      //document.getElementById('content').innerText = 'No events found.';
       return;
     }
     const output = events.reduce(
       (str, event) => `${str}${event.summary} (${event.start.dateTime || event.start.date})\n`,
       'Events:\n'
     );
-    document.getElementById('content').innerText = output;
+    //document.getElementById('content').innerText = output;
   }
 
   async grabar() {
@@ -110,12 +113,12 @@ class GoogleCalendarAPI {
       location: '800 Howard St., San Francisco, CA 94103',
       description: "A chance to hear more about Google's developer products.",
       start: {
-        dateTime: '2023-05-31T09:00:00-07:00',
-        timeZone: 'America/Los_Angeles',
-      },
-      end: {
-        dateTime: '2023-05-31T17:00:00-07:00',
-        timeZone: 'America/Los_Angeles',
+        dateTime: '2023-05-31T11:00:00-05:00',
+        timeZone: 'America/Lima',
+        },
+        end: {
+        dateTime: '2023-05-31T19:00:00-05:00',
+        timeZone: 'America/Lima',
       },
       recurrence: ['RRULE:FREQ=DAILY;COUNT=2'],
       attendees: [
