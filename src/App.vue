@@ -5,6 +5,8 @@
     <button id="authorize_button" v-if="flagAutorizedBtn" :onclick="handleAuthClick">Authorize</button>
     <button id="signout_button" :onclick="handleSignoutClick">Sign Out</button>
     <button id="grabar" :onclick="grabar">grabar</button>
+    <button id="grabar" :onclick="execute">execute</button>
+    <button :onclick="getById">GET by ID</button>
 
     <pre id="content" style="white-space: pre-wrap;"></pre>
 
@@ -29,13 +31,16 @@ export default {
     };
   },
   async created() {
-      console.log("created")
-      this.googleAuth = new GoogleCalendarAPI();
+    this.googleAuth = new GoogleCalendarAPI(process.env.VUE_APP_CLIENT_ID,process.env.VUE_APP_API_KEY);
+      //console.log("created")
+      
       var inicioLoaded = await this.googleAuth.gisLoaded();
-      console.log("inicioLoaded: ",inicioLoaded);
+      //console.log("inicioLoaded: ",inicioLoaded);
       var iniciGapi = await this.googleAuth.gapiLoaded();
-      console.log("iniciGapi: ",iniciGapi);
+      //console.log("iniciGapi: ",iniciGapi);
       if(inicioLoaded && iniciGapi) this.flagAutorizedBtn=true;
+      //this.googleAuth.iniciar()
+      
     },
   methods: {
     async handleAuthClick() {
@@ -48,6 +53,17 @@ export default {
 
     async grabar(){
 
+    },
+    async getById(){
+      //this.googleAuth.getEventById();
+      //this.googleAuth.getToken()
+      await this.googleAuth.authenticate().then(()=>{
+        var bb = this.googleAuth.loadClient();
+        console.log("bb",bb)
+      })
+    },
+    async execute(){
+      this.googleAuth.execute()
     }
   },
 };

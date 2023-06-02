@@ -1,27 +1,39 @@
 /* eslint-disable no-unused-vars, no-undef */
 
 class GoogleCalendarAPI {
-  constructor() {
-    this.CLIENT_ID = process.env.VUE_APP_CLIENT_ID;
-    this.API_KEY = process.env.VUE_APP_API_KEY;
+  constructor(clientId,apiKey) {
+    this.CLIENT_ID = clientId;
+    this.API_KEY = apiKey;
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
     this.SCOPES = 'https://www.googleapis.com/auth/calendar';
     this.tokenClient = null;
     this.gapiInited = false;
     this.gisInited = false;
+    this.accessTokenKey = 'google_access_token';
+    this.access_token="";
   }
 
   async gisLoaded() {
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.CLIENT_ID,
       scope: this.SCOPES,
-      callback: '',
+      callback: this.tokenCallback.bind(this),
     });
+    /* const storedToken = localStorage.getItem(this.accessTokenKey);
+    console.log("storedToken",storedToken)
+    if (storedToken!=='undefined' && storedToken!==null) {
+      this.tokenClient.setToken(JSON.parse(storedToken));
+    } */
     console.log("this.tokenClient",this.tokenClient);
-    console.log("this.tokenClient",google);
-    this.gisInited = true;
+    //console.log("this.tokenClient",google);
+    //this.gisInited = true;
     //this.maybeEnableButtons();
     return true;
+  }
+
+  tokenCallback(credentials) {
+    // Implementa tu lógica aquí
+    console.log("credentials",credentials)
   }
 
   /* maybeEnableButtons() {
@@ -43,6 +55,9 @@ class GoogleCalendarAPI {
     this.gapiInited = true;
     //this.maybeEnableButtons();
   }
+  getToken() {
+    this.tokenClient.requestAccessToken();
+  }
 
   async handleAuthClick() {
     this.tokenClient.callback = async (resp) => {
@@ -51,14 +66,22 @@ class GoogleCalendarAPI {
       }
       ////document.getElementById('signout_button').style.visibility = 'visible';
       ////document.getElementById('authorize_button').innerText = 'Refresh';
+      
       await this.listUpcomingEvents();
     };
+    console.log("this.tokenClient: ",this.tokenClient);
 
     if (gapi.client.getToken() === null) {
       this.tokenClient.requestAccessToken({ prompt: 'consent' });
+      console.log("Con consentimieto")
+
     } else {
-      this.tokenClient.requestAccessToken({ prompt: '' });
+      //this.tokenClient.requestAccessToken({ prompt: '' });
+      this.tokenClient.requestAccessToken();
+      console.log("Sin consentimieto")
     }
+    localStorage.setItem(this.accessTokenKey, JSON.stringify(gapi.client.getToken()));
+
     return this.tokenClient;
   }
 
@@ -74,6 +97,7 @@ class GoogleCalendarAPI {
       //document.getElementById('authorize_button').innerText = 'Authorize';
       //document.getElementById('signout_button').style.visibility = 'hidden';
     }
+    localStorage.removeItem(this.accessTokenKey);
   }
 
   async listUpcomingEvents() {
@@ -105,6 +129,19 @@ class GoogleCalendarAPI {
       'Events:\n'
     );
     //document.getElementById('content').innerText = output;
+  }
+
+
+  async getEventById() {
+    return await gapi.client.calendar.events.get({
+      "calendarId": "primary",
+      "eventId": "7ju1lp5j4ssq4i8vnhntou8k7r"
+    })
+        .then(function(response) {
+                // Handle the results here (response.result has the parsed body).
+                console.log("Response", response);
+              },
+              function(err) { console.error("Execute error", err); });
   }
 
   async grabar() {
@@ -143,7 +180,48 @@ class GoogleCalendarAPI {
       console.log('event', event);
     });
   }
+
+  async authenticate() {
+    console.log('gapi.auth2', gapi.auth2);    
+    return await gapi.auth2.getAuthInstance()
+        .signIn({scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.readonly"})
+        .then(function() { console.log("Sign-in successful"); },
+              function(err) { console.error("Error signing in", err); });
+  }
+  async iniciar(){
+    
+    console.log("iniciar")
+    gapi.load("client", await this.initializeGapiClient.bind(this));
+  }
+
+  loadClient() {
+
+    gapi.client.setApiKey(this.API_KEY);
+    console.log("loadclient")
+    return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/calendar/v3/rest")
+        .then(function() { console.log("GAPI client loaded for API"); console.log("gapi.client",gapi.client);},
+              function(err) { console.error("Error loading GAPI client for API", err); });
+  }
+
+  execute() {
+    return gapi.client.calendar.events.get({
+      "calendarId": "primary",
+      "eventId": "7ju1lp5j4ssq4i8vnhntou8k7r"
+    })
+        .then(function(response) {
+                // Handle the results here (response.result has the parsed body).
+                console.log("Response", response);
+              },
+              function(err) { console.error("Execute error", err); });
+  }
+
+
 }
+
+
+
+
+//gapi.load('client', await this.initializeGapiClient.bind(this));
 
 
 export default GoogleCalendarAPI;
